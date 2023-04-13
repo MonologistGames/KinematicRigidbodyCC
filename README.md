@@ -16,8 +16,8 @@ In order to make it familiar to users, we not only make the APIs familiar, but a
 There is overview of how to use the component. May not be that detailed.
 But Considering that the component is very easy to use and the source code I offered is not complicated, you can also refer to the example project.
 ### 1. Download and import the package
-Download the package and import it into your project. 
-Or you can use the Unity Package Manager to import it.
+Download the package and import it into your project.
+You could also use git submodule.
 
 ### 2. Add the KRCC component to the character
 Add the KRCC component to the character you want to control.
