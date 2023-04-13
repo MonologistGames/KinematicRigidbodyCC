@@ -7,6 +7,7 @@ using UnityEngine.UIElements;
 public class KRCC_Inspector : Editor
 {
     public VisualTreeAsset visualTreeAsset;
+    
     public override VisualElement CreateInspectorGUI()
     {
         VisualElement tree = new VisualElement();
