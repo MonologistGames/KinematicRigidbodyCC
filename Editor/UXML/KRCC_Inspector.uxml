@@ -1,0 +1,29 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Foldout text="Function Switches" value="true">
+        <uie:PropertyField binding-path="SolveSlope" label="Solve Slope" name="SolveSlope" />
+        <uie:PropertyField binding-path="SolveStepping" name="SolveStep" />
+        <uie:PropertyField name="SolveSlide" binding-path="SolveSlide" />
+        <uie:PropertyField name="SnapGround" binding-path="SnapGround" />
+        <uie:PropertyField name="PushRigidbody" binding-path="PushRigidbody" />
+        <uie:PropertyField name="AffectCharacterVelocity" binding-path="AffectCharacterVelocity" />
+        <uie:PropertyField name="MustFloat" binding-path="MustFloat" />
+    </ui:Foldout>
+    <uie:PropertyField binding-path="MaxStepHeight" name="MaxStepHeight" />
+    <uie:PropertyField binding-path="MaxSlopeAngle" name="MaxSlopeAngle" />
+    <uie:PropertyField binding-path="EnergyRemainFactor" name="EnergyRemain" />
+    <uie:PropertyField binding-path="VelocityMoveThreshold" name="VelocityMoveThreshold" />
+    <uie:PropertyField binding-path="GroundingSpeedRemain" name="GroundingSpeedRemain" />
+    <uie:PropertyField binding-path="Gravity" name="Gravity" />
+    <uie:PropertyField name="InteractMode" binding-path="PushMode" />
+    <uie:PropertyField name="GroundLayer" binding-path="GroundLayer" />
+    <ui:Foldout text="Debug" name="Debug" value="false" style="-unity-font: url(&apos;project://database/Assets/TextMesh%20Pro/Fonts/LiberationSans.ttf?fileID=12800000&amp;guid=e3265ab4bf004d28a9537516768c1c75&amp;type=3#LiberationSans&apos;); -unity-font-style: normal; margin-top: 12px;">
+        <ui:Label tabindex="-1" text="Is Grounded:" display-tooltip-when-elided="true" name="IsGrounded" style="-unity-font-style: normal; margin-bottom: 0;">
+            <ui:Label tabindex="-1" display-tooltip-when-elided="true" name="State" binding-path="_isGrounded" enable-rich-text="false" text="[Runtime Only]" style="width: 105px; left: 30%;" />
+        </ui:Label>
+        <ui:Label tabindex="-1" text="Ground Collider:" display-tooltip-when-elided="true" name="GroundNormal" style="-unity-font-style: normal; margin-bottom: 0;">
+            <ui:Label tabindex="-1" display-tooltip-when-elided="true" name="State" binding-path="_cachedGroundNormal" enable-rich-text="false" text="[Runtime Only]" style="width: 105px; left: 30%;" />
+        </ui:Label>
+        <ui:Label tabindex="-1" text="Attached Mover:" display-tooltip-when-elided="true" name="AttachedMover" style="-unity-font-style: normal; margin-bottom: 0; margin-top: 8px;" />
+        <uie:PropertyField binding-path="_attachedMover" style="left: auto;" />
+    </ui:Foldout>
+</ui:UXML>

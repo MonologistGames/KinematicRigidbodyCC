@@ -1,0 +1,17 @@
+{
+  "name": "com.monologist.krcc",
+  "version": "1.1.0",
+  "displayName": "Kinematic Rigidbody Character Controller",
+  "description": "A kinematic character controller made using unity's internal rigidbody component.",
+  "unity": "2018.3",
+  "keywords": [
+    "Kinematic",
+    "Dynamic Platforming",
+    "Rigidbody Interactable",
+    "Character Controller"
+  ],
+  "author": {
+    "name": "Hayahane",
+    "email": "hayahane02@gmail.com"
+  }
+}

@@ -1,0 +1,17 @@
+{
+    "name": "Monologist.KRCC",
+    "rootNamespace": "",
+    "references": [
+        "Monologist.Utilities",
+        "Monologist.EditorUtilities"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
