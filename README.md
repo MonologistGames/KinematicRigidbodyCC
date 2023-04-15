@@ -40,7 +40,7 @@ that the character model and capsule collider are at desired position.
 Write your own script to make the character move.
 ```c#
 // Get the KRCC component
-private KRCC _krcc;
+private KinematicRigidbodyCharacterController _krcc;
 /*
 ...
 */
