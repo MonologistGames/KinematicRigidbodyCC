@@ -66,7 +66,7 @@ _krcc.BaseVelocity;
 ```
 
 ### (Additional) 5. Configure the Dynamic Platform
-If you want to make a dynamic platform, you can add a Rigidbody component to the platform and make sure _isKinematic_ unchecked.
+If you want to make a dynamic platform, you can add a Rigidbody component to the platform and make sure _isKinematic_ checked.
 Then you can add a KRCC component to the platform and configure it as a dynamic platform.
 
 There is only one option which is _Is Sync Up Axis_. If you uncheck it, the platform will always keep the up axis of the character unchanged, 
