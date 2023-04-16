@@ -1,5 +1,4 @@
 # KRCC
-<iframe src="//player.bilibili.com/player.html?aid=269310280&bvid=BV1Qc411V7mT&cid=1077292493&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
 
 ## Introduction
 Kinematic rigidbody character controller is a character controller system based on Unity's internal physics engine. It is designed to be easy to use and easy to extend. With the component correctly configured, 
