@@ -2,13 +2,14 @@
     <ui:Foldout text="Function Switches" value="true">
         <uie:PropertyField binding-path="SolveSlope" label="Solve Slope" name="SolveSlope" />
         <uie:PropertyField binding-path="SolveStepping" name="SolveStep" />
-        <uie:PropertyField name="SolveSlide" binding-path="SolveSlide" />
+        <uie:PropertyField name="SolveSlide" binding-path="SolveSliding" />
         <uie:PropertyField name="SnapGround" binding-path="SnapGround" />
         <uie:PropertyField name="PushRigidbody" binding-path="PushRigidbody" />
         <uie:PropertyField name="AffectCharacterVelocity" binding-path="AffectCharacterVelocity" />
         <uie:PropertyField name="MustFloat" binding-path="MustFloat" />
     </ui:Foldout>
     <uie:PropertyField binding-path="MaxStepHeight" name="MaxStepHeight" />
+    <uie:PropertyField binding-path="StepForwardLength" name="StepForwardLength" />
     <uie:PropertyField binding-path="MaxSlopeAngle" name="MaxSlopeAngle" />
     <uie:PropertyField binding-path="EnergyRemainFactor" name="EnergyRemain" />
     <uie:PropertyField binding-path="VelocityMoveThreshold" name="VelocityMoveThreshold" />
