@@ -1,5 +1,5 @@
 {
-    "name": "NewAssembly",
+    "name": "Monologist.KRCC.Editor",
     "rootNamespace": "",
     "references": [
         "GUID:05eedae014f61aa438134760ff9d23b2"

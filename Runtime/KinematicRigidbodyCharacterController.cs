@@ -15,7 +15,6 @@ namespace Monologist.KRCC
         // Performance settings and detection alloc
         private const int MaxAllocSize = 16;
         private const float GroundDetectOffset = 0.2f;
-        private const float StepForwardOffset = 0.1f;
         private const float SweepOffset = 0.02f;
 
         private int _cachedOverlapsCount;
@@ -79,7 +78,7 @@ namespace Monologist.KRCC
         /// <summary>
         /// Enable sliding against wall.
         /// </summary>
-        public bool SolveSlide = true;
+        public bool SolveSliding = true;
 
         /// <summary>
         /// Enable snapping to the ground.
@@ -337,7 +336,7 @@ namespace Monologist.KRCC
             _cachedHitInfoCount = CharacterSweepTestAll(transientPosition, transientRotation, -CharacterUp,
                 MaxStepHeight,
                 out var isStartPenetrated, out var closetHitInfo, GroundLayer, _cachedSweepHitInfos, IsColliderValid,
-                SweepOffset);
+                Physics.defaultContactOffset);
 
             _isGrounded = false;
             if (_cachedHitInfoCount <= 0 || isStartPenetrated) return;
@@ -353,7 +352,7 @@ namespace Monologist.KRCC
 
             if (!SnapGround) return;
             // Snap to ground
-            transientPosition -= CharacterUp * Mathf.Max(0, closetHitInfo.distance - 3 * Physics.defaultContactOffset);
+            transientPosition -= CharacterUp * Mathf.Max(0, closetHitInfo.distance - Physics.defaultContactOffset);
         }
 
         #region Safe Move Update
@@ -388,7 +387,7 @@ namespace Monologist.KRCC
         {
             // Get overlapped colliders
             _cachedOverlapsCount = CharacterOverlap(transientPosition, transientRotation, GroundLayer,
-                _cachedOverlapColliders);
+                _cachedOverlapColliders, Physics.defaultContactOffset);
             bool rigidbodyInteractMark = false;
 
             if (_cachedOverlapsCount <= 0) return false;
@@ -480,6 +479,12 @@ namespace Monologist.KRCC
             ref float transientDistance, ref SweepMode sweepMode, ref Vector3 previousNormal,
             ref Vector3 previousDirection)
         {
+            if (transientDistance <= VelocityMoveThreshold)
+            {
+                transientDistance = 0f;
+                return false;
+            }
+            
             // Sweep test
             _cachedHitInfoCount =
                 CharacterSweepTestAll(transientPosition, transientRotation, transientDirection, transientDistance,
@@ -487,20 +492,39 @@ namespace Monologist.KRCC
                     IsColliderValid, Physics.defaultContactOffset);
 
             // Move without blocking hit
-            if (_cachedHitInfoCount <= 0)
+            if (_cachedHitInfoCount <= 0 && !isStartPenetrated)
             {
                 transientPosition += transientDirection * transientDistance;
                 transientDistance = 0f;
                 return true;
             }
+            
+            #region Depenetration
 
+            // Resolve penetration
+            if (isStartPenetrated)
+            {
+                for (int i = 0; i < _cachedHitInfoCount; i++)
+                {
+                    if (!IsPenetratedAtStart(_cachedSweepHitInfos[i])) continue;
+
+                    ResolvePenetration(_cachedSweepHitInfos[i].collider, ref transientPosition);
+                }
+
+                return true;
+            }
+
+            #endregion
+            
             // Apply movement for this iteration
             if (!((closetHitInfo.collider.attachedRigidbody &&
                    !closetHitInfo.collider.attachedRigidbody.isKinematic)))
                 closetHitInfo.distance -= Physics.defaultContactOffset;
+            
             closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance);
-            transientPosition +=
-                transientDirection * closetHitInfo.distance;
+            if (closetHitInfo.distance < VelocityMoveThreshold) closetHitInfo.distance = 0;
+            
+            transientPosition += transientDirection * closetHitInfo.distance;
             transientDistance -= closetHitInfo.distance;
 
             #region Interact Rigidbodies
@@ -526,21 +550,6 @@ namespace Monologist.KRCC
                     }
 
                     return false;
-                }
-            }
-
-            #endregion
-
-            #region Depenetration
-
-            // Resolve penetration
-            if (isStartPenetrated)
-            {
-                for (int i = 0; i < _cachedHitInfoCount; i++)
-                {
-                    if (!IsPenetratedAtStart(_cachedSweepHitInfos[i])) continue;
-
-                    ResolvePenetration(_cachedSweepHitInfos[i].collider, ref transientPosition);
                 }
             }
 
@@ -576,8 +585,12 @@ namespace Monologist.KRCC
 
             if (SolveStepping)
             {
+                float angle = Vector3.Angle(
+                    Vector3.ProjectOnPlane(closetHitInfo.point - transientPosition, GroundNormal),
+                transientDirection);
+                
                 // Try stepping
-                if (DetectStep(ref transientPosition, transientDirection, transientRotation))
+                if (SolveStep(ref transientPosition, transientDirection, ref transientDistance,transientRotation, 1/Mathf.Cos(Mathf.Deg2Rad * angle)))
                 {
                     transientDirection = Vector3.ProjectOnPlane(transientDirection, _cachedGroundNormal).normalized;
                     sweepMode = SweepMode.Initial;
@@ -590,14 +603,14 @@ namespace Monologist.KRCC
             #region Slide Solving
 
             // Try Slide
-            if (SolveSlide)
+            if (SolveSliding)
             {
                 previousDirection = transientDirection.normalized;
                 previousNormal = closetHitInfo.normal;
-
-                SlideAlongSurface(closetHitInfo.normal, previousNormal, ref transientDirection, previousDirection,
+                //Debug.Log("previous: " + transientDirection + " " + transientDistance);
+                SolveSlideAlongSurface(closetHitInfo.normal, previousNormal, ref transientDirection, previousDirection,
                     ref sweepMode);
-
+                //Debug.Log("current: " + transientDirection + " " + transientDistance);
                 transientDistance *= transientDirection.magnitude;
                 transientDirection = transientDirection.normalized;
 
@@ -648,23 +661,51 @@ namespace Monologist.KRCC
         /// <param name="transientDirection">Transient moving direction.</param>
         /// <param name="transientRotation">Transient character rotation.</param>
         /// <returns>Is step action valid.</returns>
-        private bool DetectStep(ref Vector3 transientPosition, Vector3 transientDirection, Quaternion transientRotation)
+        private bool SolveStep(ref Vector3 transientPosition, Vector3 transientDirection, ref float transientDistance,Quaternion transientRotation, float forwardScale)
         {
-            Vector3 stepTraceStart = transientPosition + transientDirection * StepForwardOffset +
-                                     CharacterUp * MaxStepHeight;
+            Vector3 stepTraceStart = transientPosition;
+            // Sweep Up
+            _cachedHitInfoCount = CharacterSweepTestAll(stepTraceStart, transientRotation, CharacterUp,
+                MaxStepHeight, out var isStartPenetrated, out var closetHitInfo, GroundLayer, _cachedSweepHitInfos,
+                IsColliderValid,Physics.defaultContactOffset);
+            if (_cachedHitInfoCount <= 0)
+                stepTraceStart = transientPosition + CharacterUp * MaxStepHeight;
+            else
+                stepTraceStart = transientPosition + CharacterUp * closetHitInfo.distance;
+            
+            // Sweep Forward
+            _cachedHitInfoCount = CharacterSweepTestAll(stepTraceStart, transientRotation, transientDirection,
+                transientDistance, out isStartPenetrated, out closetHitInfo, GroundLayer,
+                _cachedSweepHitInfos, IsColliderValid, Physics.defaultContactOffset);
+            float forwardDistance;
+            if (_cachedHitInfoCount > 0)
+            {
+                forwardDistance = closetHitInfo.distance - Physics.defaultContactOffset;
+                return false;
+            }
+            else
+            {
+                forwardDistance = transientDistance;
+            }
+            
+            stepTraceStart += transientDirection * forwardDistance;
+            
+            // Sweep down
             _cachedHitInfoCount = CharacterSweepTestAll(stepTraceStart, transientRotation, -CharacterUp,
-                MaxStepHeight, out var isStartPenetrated, out var closetHitInfo, GroundLayer,
-                _cachedSweepHitInfos, IsColliderValid, SweepOffset);
+                MaxStepHeight, out isStartPenetrated, out closetHitInfo, GroundLayer,
+                _cachedSweepHitInfos, IsColliderValid, Physics.defaultContactOffset);
 
             if (_cachedHitInfoCount <= 0 || isStartPenetrated) return false;
-
+            
             bool isStable = IsStableOnNormal(closetHitInfo.normal, transientRotation);
             if (!isStable) return false;
-
+                
             _isGrounded = true;
             _cachedGroundNormal = closetHitInfo.normal;
             transientPosition =
-                stepTraceStart - CharacterUp * (closetHitInfo.distance - Physics.defaultContactOffset * 3);
+                stepTraceStart - CharacterUp * (closetHitInfo.distance - Physics.defaultContactOffset);
+            transientDistance -= forwardDistance;
+            //Debug.Log(Time.fixedTime + " Successfully step onto " + closetHitInfo.collider.name + " " + transientPosition);
 
             return true;
         }
@@ -695,7 +736,7 @@ namespace Monologist.KRCC
         /// <param name="transientDirection">Transient move direction.</param>
         /// <param name="previousDirection">Previous velocity.</param>
         /// <param name="sweepMode">Enum sweep mode, used for one wall and two walls.</param>
-        private void SlideAlongSurface(Vector3 normal, Vector3 previousNormal, ref Vector3 transientDirection,
+        private void SolveSlideAlongSurface(Vector3 normal, Vector3 previousNormal, ref Vector3 transientDirection,
             Vector3 previousDirection, ref SweepMode sweepMode)
         {
             // Project on one wall
