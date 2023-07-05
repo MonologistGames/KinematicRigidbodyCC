@@ -15,7 +15,6 @@ namespace Monologist.KRCC
         // Performance settings and detection alloc
         private const int MaxAllocSize = 16;
         private const float GroundDetectOffset = 0.2f;
-        private const float SweepOffset = 0.02f;
 
         private int _cachedOverlapsCount;
         private readonly Collider[] _cachedOverlapColliders = new Collider[MaxAllocSize];
@@ -196,6 +195,7 @@ namespace Monologist.KRCC
         #region Ground Info
 
         public LayerMask GroundLayer;
+        public LayerMask InteractLayer;
         [SerializeField] private bool _isGrounded;
         public bool IsGrounded => _isGrounded;
         [SerializeField] private Vector3 _cachedGroundNormal = Vector3.up;
@@ -283,6 +283,7 @@ namespace Monologist.KRCC
             _rotationDirtyMark = false; // Clear rotation dirty mark
 
             SaveRelativePositionAndRotation(_transientPosition, _transientRotation);
+            Debug.Log(CurrentVelocity.magnitude);
         }
 
         #endregion
@@ -386,7 +387,7 @@ namespace Monologist.KRCC
             Quaternion transientRotation)
         {
             // Get overlapped colliders
-            _cachedOverlapsCount = CharacterOverlap(transientPosition, transientRotation, GroundLayer,
+            _cachedOverlapsCount = CharacterOverlap(transientPosition, transientRotation, InteractLayer,
                 _cachedOverlapColliders, Physics.defaultContactOffset);
             bool rigidbodyInteractMark = false;
 
@@ -479,12 +480,6 @@ namespace Monologist.KRCC
             ref float transientDistance, ref SweepMode sweepMode, ref Vector3 previousNormal,
             ref Vector3 previousDirection)
         {
-            if (transientDistance <= VelocityMoveThreshold)
-            {
-                transientDistance = 0f;
-                return false;
-            }
-            
             // Sweep test
             _cachedHitInfoCount =
                 CharacterSweepTestAll(transientPosition, transientRotation, transientDirection, transientDistance,
@@ -522,8 +517,7 @@ namespace Monologist.KRCC
                 closetHitInfo.distance -= Physics.defaultContactOffset;
             
             closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance);
-            if (closetHitInfo.distance < VelocityMoveThreshold) closetHitInfo.distance = 0;
-            
+
             transientPosition += transientDirection * closetHitInfo.distance;
             transientDistance -= closetHitInfo.distance;
 
@@ -605,12 +599,11 @@ namespace Monologist.KRCC
             // Try Slide
             if (SolveSliding)
             {
+                if (!IsStaticColliderValid(closetHitInfo.collider)) return false;
                 previousDirection = transientDirection.normalized;
                 previousNormal = closetHitInfo.normal;
-                //Debug.Log("previous: " + transientDirection + " " + transientDistance);
                 SolveSlideAlongSurface(closetHitInfo.normal, previousNormal, ref transientDirection, previousDirection,
                     ref sweepMode);
-                //Debug.Log("current: " + transientDirection + " " + transientDistance);
                 transientDistance *= transientDirection.magnitude;
                 transientDirection = transientDirection.normalized;
 

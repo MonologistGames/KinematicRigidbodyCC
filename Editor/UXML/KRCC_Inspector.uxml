@@ -9,7 +9,6 @@
         <uie:PropertyField name="MustFloat" binding-path="MustFloat" />
     </ui:Foldout>
     <uie:PropertyField binding-path="MaxStepHeight" name="MaxStepHeight" />
-    <uie:PropertyField binding-path="StepForwardLength" name="StepForwardLength" />
     <uie:PropertyField binding-path="MaxSlopeAngle" name="MaxSlopeAngle" />
     <uie:PropertyField binding-path="EnergyRemainFactor" name="EnergyRemain" />
     <uie:PropertyField binding-path="VelocityMoveThreshold" name="VelocityMoveThreshold" />
@@ -17,6 +16,7 @@
     <uie:PropertyField binding-path="Gravity" name="Gravity" />
     <uie:PropertyField name="InteractMode" binding-path="PushMode" />
     <uie:PropertyField name="GroundLayer" binding-path="GroundLayer" />
+    <uie:PropertyField name="InteractLayer" binding-path="InteractLayer" />
     <ui:Foldout text="Debug" name="Debug" value="false" style="-unity-font: url(&apos;project://database/Assets/TextMesh%20Pro/Fonts/LiberationSans.ttf?fileID=12800000&amp;guid=e3265ab4bf004d28a9537516768c1c75&amp;type=3#LiberationSans&apos;); -unity-font-style: normal; margin-top: 12px;">
         <ui:Label tabindex="-1" text="Is Grounded:" display-tooltip-when-elided="true" name="IsGrounded" style="-unity-font-style: normal; margin-bottom: 0;">
             <ui:Label tabindex="-1" display-tooltip-when-elided="true" name="State" binding-path="_isGrounded" enable-rich-text="false" text="[Runtime Only]" style="width: 105px; left: 30%;" />
