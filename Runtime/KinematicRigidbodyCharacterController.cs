@@ -259,7 +259,7 @@ namespace Monologist.KRCC
                     {
                         break;
                     }
-
+                    Debug.Log(i + " " + Time.fixedUnscaledTime + " " + sweepMode);
                     if (_remainingMoveDistance <= 0) break;
                 }
 
@@ -283,7 +283,6 @@ namespace Monologist.KRCC
             _rotationDirtyMark = false; // Clear rotation dirty mark
 
             SaveRelativePositionAndRotation(_transientPosition, _transientRotation);
-            Debug.Log(CurrentVelocity.magnitude);
         }
 
         #endregion
@@ -352,8 +351,9 @@ namespace Monologist.KRCC
             _isGrounded = true;
 
             if (!SnapGround) return;
+            closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance - Physics.defaultContactOffset);
             // Snap to ground
-            transientPosition -= CharacterUp * Mathf.Max(0, closetHitInfo.distance - Physics.defaultContactOffset);
+            transientPosition -= CharacterUp * closetHitInfo.distance;
         }
 
         #region Safe Move Update
@@ -388,7 +388,7 @@ namespace Monologist.KRCC
         {
             // Get overlapped colliders
             _cachedOverlapsCount = CharacterOverlap(transientPosition, transientRotation, InteractLayer,
-                _cachedOverlapColliders, Physics.defaultContactOffset);
+                _cachedOverlapColliders);
             bool rigidbodyInteractMark = false;
 
             if (_cachedOverlapsCount <= 0) return false;
@@ -489,7 +489,7 @@ namespace Monologist.KRCC
             // Move without blocking hit
             if (_cachedHitInfoCount <= 0 && !isStartPenetrated)
             {
-                transientPosition += transientDirection * transientDistance;
+                transientPosition += transientDirection * Mathf.Max(0, transientDistance - Physics.defaultContactOffset);
                 transientDistance = 0f;
                 return true;
             }
@@ -502,21 +502,15 @@ namespace Monologist.KRCC
                 for (int i = 0; i < _cachedHitInfoCount; i++)
                 {
                     if (!IsPenetratedAtStart(_cachedSweepHitInfos[i])) continue;
-
                     ResolvePenetration(_cachedSweepHitInfos[i].collider, ref transientPosition);
                 }
-
                 return true;
             }
 
             #endregion
             
             // Apply movement for this iteration
-            if (!((closetHitInfo.collider.attachedRigidbody &&
-                   !closetHitInfo.collider.attachedRigidbody.isKinematic)))
-                closetHitInfo.distance -= Physics.defaultContactOffset;
-            
-            closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance);
+            //closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance);
 
             transientPosition += transientDirection * closetHitInfo.distance;
             transientDistance -= closetHitInfo.distance;
@@ -622,9 +616,11 @@ namespace Monologist.KRCC
         /// <returns>Is the collider penetrated.</returns>
         private bool IsPenetratedAtStart(RaycastHit hit)
         {
+            /*
             if (hit.collider.attachedRigidbody && !hit.collider.attachedRigidbody.isKinematic)
                 return false;
-            if (hit.distance <= 0)
+            */
+            if (hit.distance < 0 && hit.point == Vector3.zero)
                 return true;
 
             return false;
@@ -643,7 +639,7 @@ namespace Monologist.KRCC
                     penetratedCollider.transform.rotation,
                     out var resolveDirection, out var resolveDistance))
             {
-                transientPosition += resolveDirection.normalized * (resolveDistance + Physics.defaultContactOffset);
+                transientPosition += resolveDirection * (resolveDistance);
             }
         }
 
@@ -667,20 +663,18 @@ namespace Monologist.KRCC
                 stepTraceStart = transientPosition + CharacterUp * closetHitInfo.distance;
             
             // Sweep Forward
+            float forwardDistance = Mathf.Max(0.1f, transientDistance);
             _cachedHitInfoCount = CharacterSweepTestAll(stepTraceStart, transientRotation, transientDirection,
-                transientDistance, out isStartPenetrated, out closetHitInfo, GroundLayer,
+                forwardDistance, out isStartPenetrated, out closetHitInfo, GroundLayer,
                 _cachedSweepHitInfos, IsColliderValid, Physics.defaultContactOffset);
-            float forwardDistance;
+
             if (_cachedHitInfoCount > 0)
             {
-                forwardDistance = closetHitInfo.distance - Physics.defaultContactOffset;
-                return false;
+                forwardDistance = closetHitInfo.distance;
+                //return false;
             }
-            else
-            {
-                forwardDistance = transientDistance;
-            }
-            
+
+            forwardDistance = Mathf.Max(0, forwardDistance - Physics.defaultContactOffset);
             stepTraceStart += transientDirection * forwardDistance;
             
             // Sweep down
@@ -695,15 +689,15 @@ namespace Monologist.KRCC
                 
             _isGrounded = true;
             _cachedGroundNormal = closetHitInfo.normal;
+            closetHitInfo.distance = Mathf.Max(0, closetHitInfo.distance - Physics.defaultContactOffset);
             transientPosition =
-                stepTraceStart - CharacterUp * (closetHitInfo.distance - Physics.defaultContactOffset);
-            transientDistance -= forwardDistance;
-            //Debug.Log(Time.fixedTime + " Successfully step onto " + closetHitInfo.collider.name + " " + transientPosition);
-
+                stepTraceStart - CharacterUp * (closetHitInfo.distance);
+            transientDistance -= (forwardDistance + MaxStepHeight - closetHitInfo.distance);
+            transientDistance = Mathf.Max(0, transientDistance);
             return true;
         }
 
-
+ 
         /// <summary>
         /// Project velocity on surface depending on surface's stability.
         /// </summary>
@@ -920,7 +914,7 @@ namespace Monologist.KRCC
             // Sweep test
             int hitCount = Physics.CapsuleCastNonAlloc(bottomPosition, topPosition,
                 CapsuleRadius - sweepOffset, direction, sweepHits,
-                distance, queryLayer, QueryTriggerInteraction.Ignore);
+                distance + 2 * sweepOffset, queryLayer, QueryTriggerInteraction.Ignore);
 
             // Sweep filter
             closetHitInfo = new RaycastHit();
